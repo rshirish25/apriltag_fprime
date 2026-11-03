@@ -1,0 +1,19 @@
+cmake_minimum_required(VERSION 3.26)
+project(AprilTagStandalone LANGUAGES C CXX)
+
+get_filename_component(FRAMEWORK_SOURCE "${CMAKE_CURRENT_LIST_DIR}/lib/fprime" REALPATH)
+include("${FRAMEWORK_SOURCE}/cmake/FPrime.cmake")
+fprime_setup_included_code()
+
+find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs)
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_PYTHON_WRAPPER OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+add_subdirectory(lib/apriltag)
+set_target_properties(apriltag PROPERTIES C_EXTENSIONS ON)
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(apriltag PRIVATE -Wno-pedantic)
+endif()
+
+add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Components/AprilTag")
+add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/AprilTagTest")

@@ -1,0 +1,8 @@
+.venv/
+lib/fprime/
+lib/apriltag/
+build-fprime-*/
+build-artifacts/
+logs/
+*.log
+poses.csv
