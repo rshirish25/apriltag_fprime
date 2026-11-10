@@ -45,8 +45,8 @@ python -m pip install -r requirements.txt
 Ensure the camera HAT is configured and `rpicam-still` works for your hardware
 ([Raspberry Pi camera documentation](https://www.raspberrypi.com/documentation/accessories/camera-software.html)).
 The camera component's existing `sudo -n i2cset` operation must also be allowed
-without an interactive password. Captures disable preview so they can run over
-SSH.
+without an interactive password. Captures use the default `rpicam-still` preview
+for testing with the Pi connected to a display.
 
 Build and launch the GDS on the Pi:
 
