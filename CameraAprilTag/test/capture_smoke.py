@@ -49,7 +49,10 @@ def main():
         tools.mkdir()
         images = work / ("images_" + "x" * 28)
         images.mkdir()
-        (tools / "sudo").write_text("#!/bin/sh\nexit 0\n")
+        # Direct-camera capture must work without attempting HAT selection.
+        (tools / "sudo").write_text(
+            '#!/bin/sh\ntouch "$TEST_WORK/unexpected_i2c"\nexit 1\n'
+        )
         (tools / "rpicam-still").write_text(
             '#!/bin/sh\n'
             'printf incomplete > "$2"\n'
@@ -74,6 +77,10 @@ def main():
                 connection, _ = server.accept()
                 with connection:
                     poses = work / "poses.csv"
+                    send_command(connection, 0x10030000,
+                                 struct.pack(">I", 1) + string_argument(images.name))
+                    time.sleep(0.2)
+                    assert not (work / "capture_started").exists(), "Only camera 0 is supported"
                     send_command(connection, 0x10030000,
                                  struct.pack(">I", 0) + string_argument(images.name))
                     wait_for(lambda: (work / "capture_started").exists(), process)
@@ -109,6 +116,8 @@ def main():
                     send_command(connection, 0x10020000, string_argument("missing.png"))
                     time.sleep(0.3)
                     assert process.poll() is None and len(rows()) == 8
+                    assert not (work / "unexpected_i2c").exists(), "Attempted HAT selection"
+                print("PASS: direct camera 0 capture without HAT/I2C selection")
                 print("PASS: completed capture -> async image path -> four tag poses")
                 print("PASS: incomplete/failed captures do not produce pose rows")
                 print("PASS: manual image command and missing-image handling")

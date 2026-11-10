@@ -6,6 +6,11 @@ This deployment connects `CameraAprilTag.camera.imageCaptured` to
 AprilTag loads that file on its own task, detects tags, estimates poses, and
 appends them to `poses.csv` in the deployment process's working directory.
 
+The current camera source is a temporary bench version for a single directly
+connected camera (`cameraId = 0`). It does not run the CamArray HAT's I2C
+selection command. This is a source change, not a startup setting; see
+"Restore the HAT version" below when changing hardware.
+
 ## Pull, build, and run on a Raspberry Pi
 
 Use 64-bit Raspberry Pi OS with Python 3.10 or newer
@@ -35,17 +40,16 @@ Install dependencies on the Pi:
 
 ```bash
 sudo apt update
-sudo apt install -y git build-essential python3-dev python3-venv libopencv-dev i2c-tools rpicam-apps
+sudo apt install -y git build-essential python3-dev python3-venv libopencv-dev rpicam-apps
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Ensure the camera HAT is configured and `rpicam-still` works for your hardware
+Ensure `rpicam-still --list-cameras` detects your directly connected camera
 ([Raspberry Pi camera documentation](https://www.raspberrypi.com/documentation/accessories/camera-software.html)).
-The camera component's existing `sudo -n i2cset` operation must also be allowed
-without an interactive password. Captures use the default `rpicam-still` preview
+Captures use the default `rpicam-still` preview
 for testing with the Pi connected to a display.
 
 Build and launch the GDS on the Pi:
@@ -94,10 +98,9 @@ CameraAprilTag.camera.TAKE_PHOTO
   filePath: /path/to/images
 ```
 
-`filePath` is an existing directory, not a filename. Camera IDs 0–3 select
-individual cameras with the upstream component's I2C configuration. The Pi must
-provide `rpicam-still`, `i2cset`, and noninteractive permission for the existing
-`sudo -n i2cset` command (bus 10, address/register 0x24).
+`filePath` is an existing directory, not a filename. This bench version accepts
+only `cameraId = 0` and invokes `rpicam-still` directly. It does not need `sudo`
+or `i2cset` to capture an image.
 
 Use a short directory argument (at most 40 characters, for example `images`):
 the framework's current `Fw::CmdStringArg` limit is 40, even though the upstream
@@ -128,6 +131,28 @@ captures reach AprilTag, incomplete/failed captures produce no CSV rows, and
 the manual image command still works. Everything runs in a temporary directory;
 the project's existing `poses.csv` is not used. This tests the handoff and
 processing, not physical camera operation. No GDS server is needed.
+
+## Restore the HAT version
+
+The direct-camera source change is isolated in camera commit
+`a62f728`. To restore the original camera selection code, run
+these commands from the project root:
+
+```bash
+cd lib/camera-components
+git switch main
+git pull --ff-only origin main
+git revert a62f728
+git push origin main
+cd ../..
+git add lib/camera-components
+git commit -m "Restore CamArray HAT camera selection"
+git push origin main
+```
+
+Then update the submodule and rebuild the deployment on the Pi. The restored
+HAT code uses `sudo -n i2cset` on bus 10, device/register `0x24`; verify these
+settings match the HAT being tested and install `i2c-tools` for that hardware.
 
 ## Pose calibration
 
