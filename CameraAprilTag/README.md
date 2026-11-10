@@ -50,9 +50,12 @@ SSH.
 
 Build and launch the GDS on the Pi:
 
+Regenerate the build cache after pulling because this deployment adds a library.
+The `-f` option replaces generated build files; source files are retained.
+
 ```bash
 cd CameraAprilTag
-fprime-util generate
+fprime-util generate -f
 fprime-util build -j 2
 mkdir -p ../build-artifacts/Linux/CameraAprilTag/bin/images
 fprime-gds --framing-selection fprime --communication-selection tcp-fast-server --tcp-fast-address 127.0.0.1
