@@ -17,3 +17,4 @@ endif()
 
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Components/AprilTag")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/AprilTagTest")
+add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/CameraAprilTag")

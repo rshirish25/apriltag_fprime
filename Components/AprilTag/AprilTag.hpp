@@ -12,6 +12,9 @@ class AprilTag final : public AprilTagComponentBase {
     ~AprilTag() override;
 
   private:
+    void processImage_handler(FwIndexType portNum, const Fw::StringBase& imagePath) override;
+    bool processImage(const char* imagePath);
+
     void PROCESS_IMAGE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq,
                                   const Fw::CmdStringArg& imagePath) override;
 

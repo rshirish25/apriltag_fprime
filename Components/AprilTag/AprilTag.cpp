@@ -1,6 +1,7 @@
 #include "Components/AprilTag/AprilTag.hpp"
 #include "apriltag_pose.h"
 #include "tag36h11.h"
+#include <Fw/Logger/Logger.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <fstream>
 #include <iomanip>
@@ -32,13 +33,32 @@ AprilTag::~AprilTag() {
 
 void AprilTag::PROCESS_IMAGE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq,
                                        const Fw::CmdStringArg& imagePath) {
-    cv::Mat gray = cv::imread(imagePath.toChar(), cv::IMREAD_GRAYSCALE);
+    const bool success = this->processImage(imagePath.toChar());
+    cmdResponse_out(opCode, cmdSeq, success ? Fw::CmdResponse::OK : Fw::CmdResponse::EXECUTION_ERROR);
+}
+
+void AprilTag::processImage_handler(FwIndexType portNum, const Fw::StringBase& imagePath) {
+    (void)portNum;
+    (void)this->processImage(imagePath.toChar());
+}
+
+bool AprilTag::processImage(const char* imagePath) {
+    cv::Mat gray = cv::imread(imagePath, cv::IMREAD_GRAYSCALE);
+    if (gray.empty()) {
+        Fw::Logger::log("AprilTag: cannot read image %s\n", imagePath);
+        return false;
+    }
+
+    std::ofstream csv(CSV_PATH, std::ios::app);
+    if (!csv) {
+        Fw::Logger::log("AprilTag: cannot open %s\n", CSV_PATH);
+        return false;
+    }
 
     // AprilTag reads the OpenCV grayscale buffer directly.
     image_u8_t image = {gray.cols, gray.rows, static_cast<int>(gray.step), gray.data};
     zarray_t* detections = apriltag_detector_detect(m_detector, &image);
 
-    std::ofstream csv(CSV_PATH, std::ios::app);
     csv << std::setprecision(17);
     if (csv.tellp() == 0) {
         csv << "frame,tag_id,tx,ty,tz,r11,r12,r13,r21,r22,r23,r31,r32,r33\n";
@@ -70,8 +90,12 @@ void AprilTag::PROCESS_IMAGE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq,
 
     apriltag_detections_destroy(detections);
     csv.close();
+    if (!csv) {
+        Fw::Logger::log("AprilTag: cannot write %s\n", CSV_PATH);
+        return false;
+    }
     ++m_frame;
-    cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
+    return true;
 }
 
 }

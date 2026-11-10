@@ -19,3 +19,6 @@ again to use the recorded dependency versions.
 
 System dependencies such as OpenCV and the Python packages in
 `requirements.txt` must still be installed separately.
+
+The [CameraAprilTag deployment](CameraAprilTag/README.md) connects completed
+camera captures to AprilTag detection, pose estimation, and CSV output.
